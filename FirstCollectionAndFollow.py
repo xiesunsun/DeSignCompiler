@@ -1,7 +1,7 @@
 '''
 author:xiesunsun
 date:5-13-9:08
-descrption:find all character's First collection
+descrption:find all character's First collection and specific GM's FOLLOW set
     1. input cannot solve '|'
     2. cannot find  inital alpha automatically
     3. use '#' represent end of file 
@@ -16,6 +16,7 @@ class Gramma():
 
     def __init__(self) -> None:
         self.production = defaultdict(list)  # store production
+        self.Follow = defaultdict(set)  # store all char's follow collection
         self.First = defaultdict(set)  # store all char 's first collection
         self.initalAlpha = None
         self.NT = []
@@ -25,6 +26,7 @@ class Gramma():
         self.getALLNT()
         self.getAllT()
         self.GetAllFirst()
+        self.getAllFollow()
 
     def SetIntialAlpha(self):
         S = input('input inital character\n')
@@ -94,9 +96,39 @@ class Gramma():
                 temp.extend(list(self.First[i]))
                 self.First[i].update(temp)
 
+    def getAllFollow(self):
+        '''这个不动点算法有点东西的'''
+        for i in self.NT:
+            self.Follow[i].add('#')
+        # self.Follow[self.initalAlpha].add('#') #迭代的过程我们会遇到这个东西吗,不会遇到的起始符号，我们只会在相应的production的左侧出现的
+        old = {}
+        while old != self.Follow:  # 不动点算法的标准起势
+            old = deepcopy(self.Follow)
+            for key in self.production:
+                for j in self.production[key]:  # 一值多键的可能性
+                    temp = []
+                    temp.extend(self.Follow[key])
+                    length = len(j)
+                    for i in range(length):  # 注意我们需要的是到倒序
+                        if j[length-i-1] in self.NT:
+                            # 注意这一段话的逻辑问题
+                            self.Follow[j[length-i-1]
+                                        ].update(set(temp).union(self.Follow[j[length-i-1]]))
+                            if '$' in self.First[j[length-i-1]]:
+                                # 修正相应的temp迭代项目
+                                temp.extend(
+                                    self.First[j[length-i-1]]-set(['$']))
+                            else:
+                                # 修正相应的temp迭代项目
+                                temp = self.First[j[length-i-1]]
+                        else:
+                            # 终结符号的情况我们直接赋值修原始项目
+                            temp = self.First[j[length-i-1]]
+
 
 if __name__ == '__main__':
     g = Gramma()
     print(g)
     print(g.NT, g.T)
     print(g.First)
+    print(g.Follow)
